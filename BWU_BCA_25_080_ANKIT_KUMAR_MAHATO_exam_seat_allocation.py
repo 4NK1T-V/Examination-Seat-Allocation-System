@@ -1,8 +1,6 @@
-"""
-EXAMINATION SEAT ALLOCATION SYSTEM
-"""
+"""EXAMINATION SEAT ALLOCATION SYSTEM
 
-# --------------------------- INPUT DATA ---------------------------
+"""
 
 students = [
     {"roll": 1001, "name": "Aarav",  "section": "A", "subject": "Python",  "preferred_room": None, "special": False},
@@ -38,13 +36,12 @@ rooms = {
     "R4": {"capacity": 6, "invigilator": "Ms. Sen", "priority_seats": [1, 6]},
 }
 
+
 seating = {room: {} for room in rooms}
 
 
-# --------------------------- STUDENT FUNCTIONS ---------------------------
-
 def add_student():
-    """Add a student through keyboard input."""
+    """Add a new student after validating the entered details."""
     try:
         roll = int(input("Roll number: "))
         if any(s["roll"] == roll for s in students):
@@ -52,25 +49,35 @@ def add_student():
             return
         name = input("Student name: ").strip()
         section = input("Section: ").strip().upper()
-        subject = input("Subject: ").strip()
+        subject = input("Examination subject: ").strip()
         preferred = input("Preferred room (R1-R4 or blank): ").strip().upper() or None
-        special = input("Special requirement? (y/n): ").strip().lower() == "y"
+        special = input("Special requirement? (y/n): ").strip().lower()
 
         if not name or not section or not subject:
             print("Name, section and subject cannot be empty.")
             return
         if preferred is not None and preferred not in rooms:
-            print("Invalid room.")
+            print("Invalid room. Choose R1, R2, R3 or R4.")
+            return
+        if special not in ("y", "n"):
+            print("Enter y or n for special requirement.")
             return
 
         students.append({
             "roll": roll, "name": name, "section": section,
             "subject": subject, "preferred_room": preferred,
-            "special": special
+            "special": special == "y"
         })
-        print("Student added. Generate the seating plan again to include them.")
+        clear_seating()
+        print("Student added. Generate the seating plan again.")
     except ValueError:
-        print("Enter a valid roll number.")
+        print("Roll number must be an integer.")
+
+
+def clear_seating():
+    """Clear the old arrangement after student data changes."""
+    global seating
+    seating = {room: {} for room in rooms}
 
 
 def remove_student():
@@ -79,12 +86,8 @@ def remove_student():
         for student in students:
             if student["roll"] == roll:
                 students.remove(student)
-                for room in seating:
-                    seating[room] = {
-                        seat: s for seat, s in seating[room].items()
-                        if s["roll"] != roll
-                    }
-                print("Student removed.")
+                clear_seating()
+                print("Student removed. Generate the seating plan again.")
                 return
         print("Student not found.")
     except ValueError:
@@ -106,17 +109,17 @@ def validate_students():
         print("Invalid data: duplicate roll numbers.")
         return False
     for s in students:
-        if s["preferred_room"] and s["preferred_room"] not in rooms:
-            print("Invalid preferred room for roll", s["roll"])
+        if not s["name"].strip() or not s["section"].strip() or not s["subject"].strip():
+            print("Invalid student details for roll:", s["roll"])
             return False
-    print("Student data is valid.")
+        if s["preferred_room"] and s["preferred_room"] not in rooms:
+            print("Invalid preferred room for roll:", s["roll"])
+            return False
     return True
 
 
-# --------------------------- CAPACITY FUNCTIONS ---------------------------
-
 def calculate_room_capacity():
-    return sum(room["capacity"] for room in rooms.values())
+    return sum(info["capacity"] for info in rooms.values())
 
 
 def check_capacity():
@@ -128,32 +131,23 @@ def check_capacity():
     return True
 
 
-# --------------------------- ALLOCATION FUNCTIONS ---------------------------
-
 def group_students():
-    """Return students in a stable, reproducible order."""
+    """Sort students deterministically; special and preferred students first."""
     return sorted(students, key=lambda s: (
-        not s["special"], not bool(s["preferred_room"]),
+        not s["special"], s["preferred_room"] is None,
         s["preferred_room"] or "", s["roll"]
     ))
 
 
-def check_seating_constraints(student, room, seat):
-    """Check room preference, priority seat and adjacent-seat rules."""
-    room_info = rooms[room]
-    if student["preferred_room"] and student["preferred_room"] != room:
+def check_seating_constraints(student, room, seat, current_seating=None):
+    """Check priority-seat and adjacent-seat rules for one proposed seat."""
+    if current_seating is None:
+        current_seating = seating
+    if student["special"] and seat not in rooms[room]["priority_seats"]:
         return False
 
-    priority = seat in room_info["priority_seats"]
- 
-    if student["special"] and not priority:
-        return False
-    if not student["special"] and not priority:
-        pass
-
- 
     for neighbour in (seat - 1, seat + 1):
-        other = seating[room].get(neighbour)
+        other = current_seating[room].get(neighbour)
         if other and (other["section"] == student["section"] or
                       other["subject"] == student["subject"]):
             return False
@@ -161,7 +155,7 @@ def check_seating_constraints(student, room, seat):
 
 
 def arrange_students():
-    """Clear old allocation and create a fresh deterministic arrangement."""
+    """Allocate all students using deterministic, iterative backtracking."""
     global seating
     seating = {room: {} for room in rooms}
 
@@ -169,43 +163,86 @@ def arrange_students():
         return False
 
     ordered = group_students()
-    unassigned = ordered[:]
+    if not ordered:
+        print("There are no students to allocate.")
+        return True
 
-    for room in rooms:
-        for seat in range(1, rooms[room]["capacity"] + 1):
-            is_priority = seat in rooms[room]["priority_seats"]
-            candidates = [
-                s for s in unassigned
-                if (s["special"] if is_priority else not s["special"])
-                and (not s["preferred_room"] or s["preferred_room"] == room)
-                and check_seating_constraints(s, room, seat)
-            ]
-           
-            if is_priority and not candidates:
-                candidates = [
-                    s for s in unassigned
-                    if not s["special"]
-                    and (not s["preferred_room"] or s["preferred_room"] == room)
-                    and check_seating_constraints(s, room, seat)
-                ]
-            if candidates:
-                candidates.sort(key=lambda s: (
-                    s["preferred_room"] != room, s["roll"]
-                ))
-                chosen = candidates[0]
-                seating[room][seat] = chosen
-                unassigned.remove(chosen)
+    # Build a fixed list of all available seats.
+    all_seats = []
+    for room, info in rooms.items():
+        for seat in range(1, info["capacity"] + 1):
+            all_seats.append((room, seat))
 
-    if unassigned:
-        print("\nCould not allocate every student while satisfying all rules.")
-        print("Unallocated roll numbers:", [s["roll"] for s in unassigned])
-        print("Try changing room capacities, priority seats or input data.")
-        return False
+    # Candidate seats are ordered to honour preferences and priority seats first.
+    options = []
+    for student in ordered:
+        possible = []
+        for room, seat in all_seats:
+            if student["special"] and seat not in rooms[room]["priority_seats"]:
+                continue
+            possible.append((room, seat))
+        possible.sort(key=lambda item: (
+            student["preferred_room"] is not None and item[0] != student["preferred_room"],
+            item[0], item[1]
+        ))
+        options.append(possible)
 
-    if validate_arrangement():
+    # Iterative backtracking avoids recursion and tries alternatives if a choice blocks later students.
+    next_choice = [0] * len(ordered)
+    assigned = [None] * len(ordered)
+    index = 0
+
+    while index >= 0 and index < len(ordered):
+        student = ordered[index]
+        placed = False
+
+        while next_choice[index] < len(options[index]):
+            room, seat = options[index][next_choice[index]]
+            next_choice[index] += 1
+
+            if seat in seating[room]:
+                continue
+            if not check_seating_constraints(student, room, seat):
+                continue
+
+            # If a preferred room has any currently valid seat, try it before other rooms.
+            if student["preferred_room"] and room != student["preferred_room"]:
+                preferred_valid = False
+                for pref_seat in range(1, rooms[student["preferred_room"]]["capacity"] + 1):
+                    if pref_seat not in seating[student["preferred_room"]] and check_seating_constraints(
+                        student, student["preferred_room"], pref_seat
+                    ):
+                        preferred_valid = True
+                        break
+                if preferred_valid:
+                    continue
+
+            seating[room][seat] = student
+            assigned[index] = (room, seat)
+            index += 1
+            if index < len(ordered):
+                next_choice[index] = 0
+            placed = True
+            break
+
+        if not placed:
+            next_choice[index] = 0
+            if index == 0:
+                break
+            index -= 1
+            previous = assigned[index]
+            if previous is not None:
+                old_room, old_seat = previous
+                del seating[old_room][old_seat]
+                assigned[index] = None
+
+    if index == len(ordered) and validate_arrangement():
         print("\nSeating arrangement generated successfully.")
         return True
-    print("Arrangement failed validation.")
+
+    clear_seating()
+    print("Could not find a valid arrangement for all students.")
+    print("Check room capacities, priority seats and student constraints.")
     return False
 
 
@@ -214,43 +251,47 @@ def assign_seats():
 
 
 def validate_arrangement():
-    """Check unique students, unique seats, capacity and all seating rules."""
-    allocated = []
+    """Validate capacity, unique allocation, preference and adjacency rules."""
+    allocated_rolls = []
     for room, seats in seating.items():
         if len(seats) > rooms[room]["capacity"]:
             return False
-        if len(seats) != len(set(seats)):
-            return False
         for seat, student in seats.items():
-            allocated.append(student["roll"])
-            if student["special"] and seat not in rooms[room]["priority_seats"]:
+            if seat < 1 or seat > rooms[room]["capacity"]:
                 return False
-            if student["preferred_room"] and student["preferred_room"] != room:
+            allocated_rolls.append(student["roll"])
+            if student["special"] and seat not in rooms[room]["priority_seats"]:
                 return False
             if not check_seating_constraints(student, room, seat):
                 return False
+            for neighbour in (seat - 1, seat + 1):
+                other = seats.get(neighbour)
+                if other and (other["section"] == student["section"] or
+                              other["subject"] == student["subject"]):
+                    return False
 
-    return len(allocated) == len(students) and len(allocated) == len(set(allocated))
+    # Every student must appear exactly once.
+    expected = [s["roll"] for s in students]
+    return (len(allocated_rolls) == len(expected) and
+            len(allocated_rolls) == len(set(allocated_rolls)) and
+            set(allocated_rolls) == set(expected))
 
-
-# --------------------------- DISPLAY AND SEARCH ---------------------------
 
 def display_seating_plan():
     if not any(seating.values()):
         print("Generate the seating plan first.")
         return
-
     for room, seats in seating.items():
         print(f"\nROOM {room} | Invigilator: {rooms[room]['invigilator']}")
         print("-" * 66)
         print(f'{"SEAT":<8} {"ROLL":<8} {"NAME":<12} {"SECTION":<9} SUBJECT')
         for seat in range(1, rooms[room]["capacity"] + 1):
-            s = seats.get(seat)
-            if s:
-                print(f'{seat:<8} {s["roll"]:<8} {s["name"]:<12} '
-                      f'{s["section"]:<9} {s["subject"]}')
+            student = seats.get(seat)
+            if student:
+                print(f'{seat:<8} {student["roll"]:<8} {student["name"]:<12} '
+                      f'{student["section"]:<9} {student["subject"]}')
             else:
-                print(f"{seat:<8} {'EMPTY'}")
+                print(f"{seat:<8} EMPTY")
 
 
 def generate_room_summary():
@@ -276,11 +317,11 @@ def search_student():
         roll = int(input("Enter student roll number: "))
         result = find_student_seat(roll)
         if result:
-            room, seat, s = result
+            room, seat, student = result
             print("\nSTUDENT SEAT DETAILS")
-            print("Name:", s["name"])
-            print("Section:", s["section"])
-            print("Subject:", s["subject"])
+            print("Name:", student["name"])
+            print("Section:", student["section"])
+            print("Subject:", student["subject"])
             print("Examination Room:", room)
             print("Seat Number:", seat)
         else:
@@ -288,8 +329,6 @@ def search_student():
     except ValueError:
         print("Enter a valid roll number.")
 
-
-# --------------------------- MAIN MENU ---------------------------
 
 def main():
     while True:
