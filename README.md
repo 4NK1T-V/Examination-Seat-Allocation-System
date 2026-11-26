@@ -1,192 +1,104 @@
 # Examination Seat Allocation System
 
-A Python-based, rule-driven application that automatically prepares
-examination seating arrangements for university students. The system
-allocates students to available rooms while checking room capacity,
-section separation, subject separation, preferred-room requests, and
-priority seats for students with special requirements.
+A menu-driven Python project that creates examination seating
+arrangements using predefined rules and basic Python programming
+concepts.
 
 ## Project Overview
 
-Universities may need to arrange many students across several
-examination rooms. Preparing these arrangements manually can take time
-and may lead to duplicate seat assignments or violations of seating
-rules.
+The Examination Seat Allocation System organises students into
+examination rooms and seats. It validates student details and room
+capacity, considers preferred rooms, gives priority seats to students
+with special requirements, and prevents students from the same section
+or subject from sitting in adjacent seats.
 
-This project provides a menu-driven Python application that stores
-student and room details separately, generates a reproducible seating
-plan, validates the final allocation, displays room-wise arrangements,
-and allows a student's seat to be found using their roll number.
+The project is implemented in **one Python file: `main.py`**. It does
+not use separate `Data` and `Main` folders.
 
 ## Features
 
--   **Student management:** Display, add, and remove student records.
--   **Automatic seat allocation:** Assign students to available seats
-    using predefined rules.
--   **Section separation:** Students from the same section cannot occupy
-    adjacent seats in the same room.
--   **Subject separation:** Students appearing for the same subject
-    cannot occupy adjacent seats in the same room.
--   **Room capacity checking:** Prevents a room from exceeding its
-    seating capacity.
--   **Unique allocation:** Each student is assigned exactly one seat,
-    and each seat is assigned to at most one student.
--   **Preferred room:** Attempts to place a student in their preferred
-    room when a valid seat is available.
--   **Priority seating:** Students marked with special requirements are
-    assigned priority seats.
--   **Invigilator details:** Displays the assigned invigilator with each
-    room's seating plan.
--   **Student seat lookup:** Searches by roll number and displays the
-    student's room and seat number.
--   **Room-wise summary:** Shows occupied seats, room capacity,
-    invigilator, and priority seat information.
--   **Reproducible results:** Uses a fixed ordering and no random
-    allocation.
+-   Display all students.
+-   Add a student after validating the entered details.
+-   Remove a student using their roll number.
+-   Generate a seating arrangement automatically.
+-   Display the seating plan room by room.
+-   Show room-wise occupancy, invigilator and priority-seat details.
+-   Search for a student's room and seat using their roll number.
+-   Check total available room capacity.
+-   Validate student details and the completed seating arrangement.
 
-## Technology Used
+## Technologies and Python Concepts
 
-  Item                      Details
-  ------------------------- --------------------------
-  Programming language      Python 3
-  Application type          Command-line application
-  Data structures           Lists and dictionaries
-  Development environment   VS Code / Python IDLE
-  External libraries        None
-  Database                  Not used
+-   **Language:** Python 3
+-   **External libraries:** None
+-   **Concepts:** Lists, dictionaries, tuples, sets, functions, loops,
+    conditional statements, sorting, input validation, exception
+    handling and formatted strings.
+-   **Allocation method:** Iterative backtracking (no recursion).
 
-## Project Structure
+## Sample Data
 
-``` text
-Exam_Seat_Allocation_Project/
-│
-├── Data/
-│   ├── __init__.py
-│   └── data.py
-│
-├── Main/
-│   ├── __init__.py
-│   └── main.py
-│
-└── README.md
-```
+The program contains 24 predefined sample students.
 
-### Folder Description
+  Item                                 Details
+  ------------------------------------ ----------------------------------
+  Students                             24
+  Sections                             A, B, C and D
+  Subjects                             Python, DBMS, Networks and Maths
+  Rooms                                R1, R2, R3 and R4
+  Capacity per room                    6 students
+  Total capacity                       24 seats
+  Students with preferred rooms        2
+  Students with special requirements   2
 
--   **Data/data.py** --- Contains the sample student records and
-    examination room details.
--   **Main/main.py** --- Contains the menu, validation, seat allocation,
-    display, summary, and search functions.
--   **README.md** --- Provides project information and instructions.
+### Room Details
 
-Keep the `Data` and `Main` folders inside the same project directory.
-The folder names are case-sensitive on some operating systems.
-
-## Sample Dataset
-
-The project includes the following minimum test dataset:
-
-  Dataset item                           Included
-  ------------------------------------ ----------
-  Students                                     24
-  Sections                                      4
-  Examination subjects                          4
-  Examination rooms                             4
-  Capacity per room                             6
-  Total room capacity                          24
-  Students with preferred rooms                 2
-  Students with special requirements            2
-
-### Sample Examination Rooms
-
-  Room     Capacity Invigilator   Priority seats
+  Room     Capacity Invigilator   Priority Seats
   ------ ---------- ------------- ----------------
-  R1              6 Mr. Sharma    1, 6
-  R2              6 Ms. Roy       1, 6
-  R3              6 Mr. Das       1, 6
-  R4              6 Ms. Sen       1, 6
+  R1              6 Mr. Sharma    1 and 6
+  R2              6 Ms. Roy       1 and 6
+  R3              6 Mr. Das       1 and 6
+  R4              6 Ms. Sen       1 and 6
 
-Student records contain a roll number, name, section, examination
-subject, preferred room (if any), and special-requirement status.
+## Seating Allocation Rules
 
-## Seating Rules
+1.  Every student must receive exactly one seat.
+2.  Room capacity must not be exceeded.
+3.  Students from the same section cannot sit in adjacent seats in the
+    same room.
+4.  Students taking the same subject cannot sit in adjacent seats in the
+    same room.
+5.  Students with special requirements must receive a priority seat
+    (seat 1 or seat 6).
+6.  A student's preferred room is tried first when a valid seat is
+    available.
+7.  The completed arrangement is validated before success is reported.
+8.  If a valid arrangement cannot be found, the incomplete arrangement
+    is cleared.
 
-The application checks the following rules while creating the seating
-plan:
+**Note:** Adjacent-seat checks apply to consecutive seat numbers within
+the same room.
 
-1.  **Section separation:** Adjacent seats must not be occupied by
-    students from the same section.
-2.  **Subject separation:** Adjacent seats must not be occupied by
-    students appearing for the same subject.
-3.  **Room capacity:** The number of students in a room must not exceed
-    its capacity.
-4.  **Unique student allocation:** Every student must receive exactly
-    one seat.
-5.  **Unique seat allocation:** A seat cannot be assigned to more than
-    one student.
-6.  **Preferred room:** The system tries to use the student's preferred
-    room when a valid seat is available.
-7.  **Special requirement:** Students marked with special requirements
-    must be assigned priority seats.
-8.  **Invigilator information:** Each room's seating plan displays its
-    assigned invigilator.
-9.  **Reproducibility:** The same input data and rules produce the same
-    allocation order; random allocation is not used.
+## How to Run
 
-Adjacent seats are treated as consecutive seat numbers within the same
-room.
-
-## How to Run the Project
-
-### 1. Install Python
-
-Install Python 3 if it is not already installed. Check the installation
-with:
+1.  Install Python 3.
+2.  Download or clone the project.
+3.  Open a terminal in the folder containing `main.py`.
+4.  Run:
 
 ``` bash
-python --version
+python main.py
 ```
 
-On some systems, use:
+If required on your system, use:
 
 ``` bash
-python3 --version
+python3 main.py
 ```
 
-### 2. Download or Clone the Repository
+No additional package installation is required.
 
-Clone the repository:
-
-``` bash
-git clone <your-repository-url>
-```
-
-Or download the repository as a ZIP file and extract it.
-
-### 3. Open the Project Folder
-
-Open the extracted `Exam_Seat_Allocation_Project` folder in VS Code or a
-terminal.
-
-### 4. Run the Application
-
-From the project root directory, run:
-
-``` bash
-python Main/main.py
-```
-
-If your system uses `python3`, run:
-
-``` bash
-python3 Main/main.py
-```
-
-No third-party package installation is required.
-
-## Application Menu
-
-When the application starts, it displays the following menu:
+## Program Menu
 
 ``` text
 ===== EXAMINATION SEAT ALLOCATION SYSTEM =====
@@ -201,28 +113,23 @@ When the application starts, it displays the following menu:
 9. Exit
 ```
 
-Choose an option by entering its number.
+Enter the corresponding number to select an operation.
 
-**Recommended first run:** Select option `4` to generate the seating
-arrangement. Then select option `5` to view the room-wise seating plan,
-option `6` to view the room summary, or option `7` to search for a
-student.
-
-## Main Python Functions
+## Main Functions
 
   -----------------------------------------------------------------------
   Function                            Purpose
   ----------------------------------- -----------------------------------
-  `add_student()`                     Adds a student record after
-                                      checking the entered details.
+  `add_student()`                     Adds a student after validating the
+                                      input.
 
-  `remove_student()`                  Removes a student using their roll
+  `remove_student()`                  Removes a student by roll number.
+
+  `display_students()`                Displays students sorted by roll
                                       number.
 
-  `display_students()`                Displays all student records.
-
-  `validate_students()`               Checks student data and duplicate
-                                      roll numbers.
+  `validate_students()`               Checks duplicate roll numbers and
+                                      invalid or incomplete details.
 
   `calculate_room_capacity()`         Calculates the total capacity of
                                       all rooms.
@@ -230,86 +137,72 @@ student.
   `check_capacity()`                  Checks whether enough seats are
                                       available.
 
-  `group_students()`                  Sorts students in a fixed,
-                                      reproducible order.
+  `group_students()`                  Orders special-requirement and
+                                      preferred-room students first.
 
   `check_seating_constraints()`       Checks priority-seat and
-                                      adjacent-seat conditions.
+                                      adjacent-seat rules.
 
-  `arrange_students()`                Generates the seating arrangement.
+  `arrange_students()`                Allocates seats using iterative
+                                      backtracking.
 
-  `assign_seats()`                    Calls the seat allocation
-                                      operation.
+  `assign_seats()`                    Calls the seating arrangement
+                                      function.
 
-  `validate_arrangement()`            Checks the completed seating plan.
+  `validate_arrangement()`            Checks that all students are
+                                      allocated once and the rules are
+                                      followed.
 
-  `display_seating_plan()`            Displays the seating arrangement
-                                      room by room.
+  `display_seating_plan()`            Displays the allocated seats in
+                                      each room.
 
-  `generate_room_summary()`           Displays room capacity and
-                                      invigilator information.
+  `generate_room_summary()`           Displays room occupancy,
+                                      invigilator and priority-seat
+                                      details.
 
-  `find_student_seat()`               Finds a student's room and seat
-                                      using the roll number.
+  `find_student_seat()`               Finds a student's room and seat.
 
-  `search_student()`                  Takes a roll number and displays
-                                      the student's seat details.
+  `search_student()`                  Accepts a roll number and displays
+                                      the seat details.
+
+  `clear_seating()`                   Clears the previous arrangement
+                                      after student data changes.
+
+  `main()`                            Runs the menu and processes user
+                                      choices.
   -----------------------------------------------------------------------
 
-## Python Concepts Demonstrated
+## Important Usage Notes
 
--   Variables and data types
--   Lists and dictionaries
--   Conditional statements (`if`, `elif`, `else`)
--   `for` and `while` loops
--   User-defined functions
--   Function arguments and return values
--   String methods
--   Sorting with `sorted()` and `lambda`
--   Searching and data validation
--   Deterministic allocation using iterative backtracking
-
-The allocation process uses **iterative backtracking**, not recursion,
-to try alternative seat assignments when a previous choice prevents a
-complete valid arrangement.
+-   Add or remove students before generating the seating plan.
+-   Adding or removing a student clears the previous seating
+    arrangement.
+-   Generate the seating plan before choosing **Display seating plan**
+    or **Search student seat**.
+-   The sample project has 24 seats. If the number of students exceeds
+    total capacity, allocation is stopped.
+-   Student and seating details are stored in Python lists and
+    dictionaries while the program is running.
 
 ## Limitations
 
--   The application uses a command-line interface; it does not include a
-    graphical user interface.
--   Student and room data are maintained in Python files and memory; no
-    database is used.
--   Student changes made while the application is running are not
-    automatically saved back to `data.py`.
--   The preferred room is used when a valid seat is available; if the
-    constraints prevent a complete valid allocation, the program reports
-    that it could not find an arrangement.
--   The sample student and room records are demonstration data and
-    should be replaced with actual examination records before real use.
+-   The project runs in the command line and does not have a graphical
+    interface.
+-   Changes are not saved permanently after the program closes.
+-   Room details, capacities, invigilators and priority seats are
+    predefined in the code.
+-   The project does not use a database, external API, AI or machine
+    learning.
 
 ## Future Improvements
 
-Possible future enhancements include:
-
--   Saving student records and seating plans to CSV files.
--   Generating printable PDF or Excel seating plans.
--   Adding a graphical user interface.
--   Supporting configurable room layouts and seat positions.
--   Allowing administrators to edit room capacities, invigilators, and
-    priority seats through the application.
+-   Save student details and seating plans to a file or database.
+-   Allow room and invigilator details to be edited.
+-   Generate printable seating reports.
+-   Add a graphical user interface.
 
 ## Project Information
 
-**Project Title:** Examination Seat Allocation System Using Rule-Based
-Student Allocation\
-**Programming Language:** Python\
-**Project Type:** Academic Project\
-**Student:** Ankit Kumar Mahato\
-**Student Code:** BWU/BCA/25/080\
-**Department:** Computational Sciences\
-**Institution:** Brainware University
-
-## References
-
--   [Python Official Documentation](https://docs.python.org/3/)
--   [Python Tutorial](https://docs.python.org/3/tutorial.html)
+-   **Project:** Examination Seat Allocation System
+-   **Main program file:** `main.py`
+-   **Programming language:** Python 3
